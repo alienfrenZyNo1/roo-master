@@ -1,17 +1,28 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { GitWorktree, listWorktrees } from '../worktree/gitWorktree';
+import { GitWorktree, GitWorktreeInfo } from '../worktree/gitWorktree';
 import { DockerContainer, listToolContainers } from '../containers/docker';
-import { getActiveMcpServers } from '../mcp/launcher';
-import { log } from '../util/logger';
+import { McpServerLauncher } from '../mcp/launcher';
+import { Logger } from '../util/logger';
+import { ErrorHandler } from '../util/errorHandler';
 
 type TreeItemType = 'worktree' | 'container' | 'mcpServer';
+
+const logger = new Logger('TreeDataProvider');
 
 export class RooMasterTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | void> = new vscode.EventEmitter<TreeItem | undefined | void>();
     readonly onDidChangeTreeData: vscode.Event<TreeItem | undefined | void> = this._onDidChangeTreeData.event;
+    private mcpServerLauncher: McpServerLauncher;
 
-    constructor(private workspaceRoot: string | undefined) {}
+    constructor(private workspaceRoot: string | undefined) {
+        this.mcpServerLauncher = new McpServerLauncher();
+        
+        // Validate workspace root
+        if (workspaceRoot) {
+            ErrorHandler.validatePath(workspaceRoot, 'directory', 'TreeDataProvider.constructor');
+        }
+    }
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
@@ -23,7 +34,12 @@ export class RooMasterTreeDataProvider implements vscode.TreeDataProvider<TreeIt
 
     async getChildren(element?: TreeItem): Promise<TreeItem[]> {
         if (!this.workspaceRoot) {
-            vscode.window.showInformationMessage('No worktree in empty workspace');
+            ErrorHandler.handleError('No worktree in empty workspace', {
+                showUser: true,
+                logLevel: 'info',
+                userMessage: 'No worktree in empty workspace',
+                context: 'TreeDataProvider.getChildren'
+            });
             return [];
         }
 
@@ -34,7 +50,7 @@ export class RooMasterTreeDataProvider implements vscode.TreeDataProvider<TreeIt
                 const children: TreeItem[] = [];
 
                 // Add MCP Server status
-                const activeMcpServersMap = getActiveMcpServers();
+                const activeMcpServersMap = this.mcpServerLauncher.getActiveMcpServers();
                 if (activeMcpServersMap.has(worktreePath)) {
                     const mcpServer = activeMcpServersMap.get(worktreePath)!;
                     children.push(new TreeItem(
@@ -68,7 +84,11 @@ export class RooMasterTreeDataProvider implements vscode.TreeDataProvider<TreeIt
                         ));
                     });
                 } catch (error: any) {
-                    log(`Error listing containers for worktree ${worktreePath}: ${error.message}`);
+                    ErrorHandler.handleError(error, {
+                        showUser: false,
+                        logLevel: 'error',
+                        context: 'TreeDataProvider.getChildren.containers'
+                    });
                 }
 
                 return children;
@@ -77,8 +97,9 @@ export class RooMasterTreeDataProvider implements vscode.TreeDataProvider<TreeIt
         } else {
             // Top-level elements: Worktrees
             try {
-                const worktrees = await listWorktrees(this.workspaceRoot);
-                return worktrees.map(worktree => {
+                const gitWorktree = new GitWorktree(this.workspaceRoot);
+                const worktrees = await gitWorktree.listWorktrees();
+                return worktrees.map((worktree: GitWorktreeInfo) => {
                     const resourceUri = vscode.Uri.file(worktree.path);
                     return new TreeItem(
                         `${path.basename(worktree.path)} (${worktree.branch})`,
@@ -89,7 +110,11 @@ export class RooMasterTreeDataProvider implements vscode.TreeDataProvider<TreeIt
                     );
                 });
             } catch (error: any) {
-                log(`Error listing worktrees: ${error.message}`);
+                ErrorHandler.handleError(error, {
+                    showUser: false,
+                    logLevel: 'error',
+                    context: 'TreeDataProvider.getChildren.worktrees'
+                });
                 return [];
             }
         }

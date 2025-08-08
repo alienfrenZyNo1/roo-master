@@ -1,20 +1,54 @@
 {
   "name": "@roo/mcp-host",
   "version": "1.0.0",
-  "description": "MCP Host Server for Roo",
+  "description": "MCP Host Server for Roo - AI-powered development orchestration and parallel track management",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc --watch & node dist/index.js"
+    "dev": "tsc --watch & node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "ai",
+    "development",
+    "orchestration",
+    "git",
+    "parallel",
+    "track",
+    "management",
+    "mcp",
+    "host",
+    "server"
+  ],
+  "author": "Roo Master",
+  "homepage": "https://github.com/roo-master/roo-master",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/roo-master/roo-master.git",
+    "directory": "packages/mcp-host"
+  },
+  "bugs": {
+    "url": "https://github.com/roo-master/roo-master/issues"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

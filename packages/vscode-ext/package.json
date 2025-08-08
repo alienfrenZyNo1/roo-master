@@ -1,15 +1,36 @@
 {
   "name": "roo-master",
   "displayName": "Roo Master",
-  "description": "VS Code Extension for Roo Master",
-  "version": "0.0.1",
-  "publisher": "RooVeterinaryInc",
+  "description": "VS Code Extension for Roo Master - AI-powered development orchestration and parallel track management",
+  "version": "1.0.0",
+  "publisher": "roo-master",
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Programming Languages",
+    "Development Tools"
   ],
+  "keywords": [
+    "ai",
+    "development",
+    "orchestration",
+    "git",
+    "parallel",
+    "track",
+    "management",
+    "mcp"
+  ],
+  "homepage": "https://github.com/roo-master/roo-master",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/roo-master/roo-master.git"
+  },
+  "bugs": {
+    "url": "https://github.com/roo-master/roo-master/issues"
+  },
+  "license": "MIT",
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -75,7 +96,6 @@
     "test": "MOCHA_REPORTER=mocha-junit-reporter MOCHA_FILE=test-results/e2e-test-results.xml vscode-test"
   },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "18.x",
     "@types/vscode": "^1.80.0",

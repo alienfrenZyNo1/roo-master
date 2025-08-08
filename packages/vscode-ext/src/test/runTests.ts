@@ -13,12 +13,7 @@ async function main() {
                 '--disable-extensions',
                 '--disable-gpu',
             ],
-            mocha: {
-                reporter: 'mocha-junit-reporter',
-                reporterOptions: {
-                    mochaFile: path.resolve(__dirname, '../../test-results/e2e-test-results.xml')
-                }
-            }
+            extensionDevelopmentPath: path.resolve(__dirname, '../..')
         });
     } catch (err) {
         console.error('Failed to run tests');

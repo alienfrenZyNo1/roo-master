@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Logger, initializeLogger } from './util/logger';
+import { ErrorHandler } from './util/errorHandler';
 import { GitWorktree, GitWorktreeInfo } from './worktree/gitWorktree';
 import { startToolContainer, stopToolContainer, listToolContainers } from './containers/docker';
 import { McpServerLauncher } from './mcp/launcher';
@@ -13,6 +14,11 @@ import { WorkPlanParser } from './orchestrator/workPlanParser';
 import { TrackExecutor } from './orchestrator/trackExecutor';
 import { PromptAnalyzer } from './orchestrator/promptAnalyzer'; // New import
 
+// Global variables for resource cleanup
+let mcpServerLauncher: McpServerLauncher | null = null;
+let rooMasterTreeDataProvider: RooMasterTreeDataProvider | null = null;
+let trackStatusTreeDataProvider: TrackStatusTreeDataProvider | null = null;
+
 export function activate(context: vscode.ExtensionContext) {
     initializeLogger();
     const logger = new Logger('Extension');
@@ -23,16 +29,20 @@ export function activate(context: vscode.ExtensionContext) {
         : undefined;
 
     if (!rootPath) {
-        logger.error('No workspace folder found. Roo Master requires an open workspace.');
-        vscode.window.showErrorMessage('No workspace folder found. Please open a folder to use Roo Master.');
+        ErrorHandler.handleError('No workspace folder found. Roo Master requires an open workspace.', {
+            showUser: true,
+            logLevel: 'error',
+            userMessage: 'No workspace folder found. Please open a folder to use Roo Master.',
+            context: 'Extension.activate'
+        });
         return;
     }
 
     // Register the existing Roo Master Explorer
-    const rooMasterTreeDataProvider = new RooMasterTreeDataProvider(rootPath);
+    rooMasterTreeDataProvider = new RooMasterTreeDataProvider(rootPath);
     vscode.window.registerTreeDataProvider('rooMasterExplorer', rooMasterTreeDataProvider);
 
-    const mcpServerLauncher = new McpServerLauncher();
+    mcpServerLauncher = new McpServerLauncher();
     const mcpServerRegistration = new McpServerRegistration(mcpServerLauncher);
 
     // Initialize TrackStatus and MergeFlow
@@ -43,8 +53,8 @@ export function activate(context: vscode.ExtensionContext) {
     const trackExecutor = new TrackExecutor(context, mcpServerLauncher, mcpServerRegistration);
 
     // Register the new Track Status Tree View
-    const trackStatusTreeDataProvider = new TrackStatusTreeDataProvider(trackStatus);
-    vscode.window.registerTreeDataProvider('rooMasterTrackStatus', trackStatusTreeDataProvider);
+    trackStatusTreeDataProvider = new TrackStatusTreeDataProvider(trackStatus);
+    vscode.window.registerTreeDataProvider('rooMasterTrackStatusView', trackStatusTreeDataProvider);
 
     context.subscriptions.push(
         vscode.commands.registerCommand('roo-master.createWorktree', async () => {
@@ -59,10 +69,14 @@ export function activate(context: vscode.ExtensionContext) {
                 // Use the mergeFlow's gitWorktree instance
                 await mergeFlow.createIntegrationBranchAndWorktree(branchName, worktreePath);
                 vscode.window.showInformationMessage(`Worktree for branch '${branchName}' created successfully.`);
-                rooMasterTreeDataProvider.refresh();
+                rooMasterTreeDataProvider?.refresh();
             } catch (error: any) {
-                logger.error(`Failed to create worktree: ${error.message}`);
-                vscode.window.showErrorMessage(`Failed to create worktree: ${error.message}`);
+                ErrorHandler.handleError(error, {
+                    showUser: true,
+                    logLevel: 'error',
+                    userMessage: `Failed to create worktree: ${error.message}`,
+                    context: 'Extension.createWorktree'
+                });
             }
         }),
         vscode.commands.registerCommand('roo-master.openWorktree', async (item?: any) => {
@@ -102,10 +116,14 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 const containerId = await startToolContainer(imageName, containerName, portBindings);
                 vscode.window.showInformationMessage(`Container '${containerName}' started with ID: ${containerId}`);
-                rooMasterTreeDataProvider.refresh();
+                rooMasterTreeDataProvider?.refresh();
             } catch (error: any) {
-                logger.error(`Failed to start container: ${error.message}`);
-                vscode.window.showErrorMessage(`Failed to start container: ${error.message}`);
+                ErrorHandler.handleError(error, {
+                    showUser: true,
+                    logLevel: 'error',
+                    userMessage: `Failed to start container: ${error.message}`,
+                    context: 'Extension.startToolContainers'
+                });
             }
         }),
         vscode.commands.registerCommand('roo-master.stopToolContainers', async () => {
@@ -120,10 +138,14 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 await stopToolContainer(selectedContainer.label);
                 vscode.window.showInformationMessage(`Container '${selectedContainer.label}' stopped.`);
-                rooMasterTreeDataProvider.refresh();
+                rooMasterTreeDataProvider?.refresh();
             } catch (error: any) {
-                logger.error(`Failed to stop container: ${error.message}`);
-                vscode.window.showErrorMessage(`Failed to stop container: ${error.message}`);
+                ErrorHandler.handleError(error, {
+                    showUser: true,
+                    logLevel: 'error',
+                    userMessage: `Failed to stop container: ${error.message}`,
+                    context: 'Extension.stopToolContainers'
+                });
             }
         }),
         vscode.commands.registerCommand('roo-master.registerMcpServer', async (item?: any) => {
@@ -149,13 +171,17 @@ export function activate(context: vscode.ExtensionContext) {
 
             if (worktreePath) {
                 try {
-                    const port = await mcpServerLauncher.launchMcpServer(worktreePath);
+                    const port = await mcpServerLauncher!.launchMcpServer(worktreePath);
                     await mcpServerRegistration.writeMcpConfig(worktreePath, { port });
                     vscode.window.showInformationMessage(`MCP Server registered and launched for ${path.basename(worktreePath)} on port ${port}.`);
-                    rooMasterTreeDataProvider.refresh();
+                    rooMasterTreeDataProvider?.refresh();
                 } catch (error: any) {
-                    logger.error(`Failed to register/launch MCP Server: ${error.message}`);
-                    vscode.window.showErrorMessage(`Failed to register/launch MCP Server: ${error.message}`);
+                    ErrorHandler.handleError(error, {
+                        showUser: true,
+                        logLevel: 'error',
+                        userMessage: `Failed to register/launch MCP Server: ${error.message}`,
+                        context: 'Extension.registerMcpServer'
+                    });
                 }
             }
         }),
@@ -192,8 +218,12 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showInformationMessage('Work plan execution completed.');
                 trackStatus.refresh();
             } catch (error: any) {
-                logger.error(`Work plan execution failed: ${error.message}`);
-                vscode.window.showErrorMessage(`Work plan execution failed: ${error.message}`);
+                ErrorHandler.handleError(error, {
+                    showUser: true,
+                    logLevel: 'error',
+                    userMessage: `Work plan execution failed: ${error.message}`,
+                    context: 'Extension.executeWorkPlan'
+                });
             }
         })
     );
@@ -202,6 +232,57 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
     const logger = new Logger('Extension');
     logger.info('Roo Master extension is deactivating.');
-    // Stop any active MCP servers if necessary
-    // This part might need more sophisticated handling depending on how MCP servers are managed
+    
+    // Clean up MCP servers
+    try {
+        if (mcpServerLauncher) {
+            const activeServers = mcpServerLauncher.getActiveMcpServers();
+            logger.info(`Stopping ${activeServers.size} active MCP servers...`);
+            
+            for (const [worktreePath, server] of activeServers) {
+                try {
+                    mcpServerLauncher.stopMcpServer(worktreePath);
+                    logger.info(`Stopped MCP server for ${worktreePath}`);
+                } catch (error: any) {
+                    ErrorHandler.handleError(error, {
+                        showUser: false,
+                        logLevel: 'error',
+                        context: 'Extension.deactivate.mcpServerCleanup'
+                    });
+                }
+            }
+        }
+    } catch (error: any) {
+        ErrorHandler.handleError(error, {
+            showUser: false,
+            logLevel: 'error',
+            context: 'Extension.deactivate.mcpServerCleanup'
+        });
+    }
+    
+    // Clean up any other resources
+    try {
+        // Dispose of tree data providers
+        if (rooMasterTreeDataProvider) {
+            // No explicit dispose method needed for TreeDataProvider
+            logger.info('Tree data providers will be automatically disposed');
+        }
+        
+        if (trackStatusTreeDataProvider) {
+            // No explicit dispose method needed for TreeDataProvider
+            logger.info('Track status tree data provider will be automatically disposed');
+        }
+        
+        // Clean up Docker containers if needed
+        logger.info('Checking for active Docker containers...');
+        // Note: We don't automatically stop containers as users might want them to continue running
+        
+        logger.info('Roo Master extension deactivated successfully.');
+    } catch (error: any) {
+        ErrorHandler.handleError(error, {
+            showUser: false,
+            logLevel: 'error',
+            context: 'Extension.deactivate.resourceCleanup'
+        });
+    }
 }

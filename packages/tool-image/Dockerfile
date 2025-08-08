@@ -14,9 +14,9 @@ RUN apt-get update && \
 # Install pnpm
 RUN npm install -g pnpm
 
-# Create a non-root user with UID/GID 1000
-RUN groupadd --gid 1000 appuser && \
-    useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
+# Create a non-root user with UID/GID 1001
+RUN groupadd --gid 1001 appuser && \
+    useradd --uid 1001 --gid appuser --shell /bin/bash --create-home appuser
 
 # Set up proper permissions for the non-root user
 # Ensure /work directory exists and is owned by appuser
@@ -28,3 +28,7 @@ USER appuser
 
 # Configure the container to start in idle mode (sleep/long-running)
 CMD ["sleep", "infinity"]
+
+# Add health check for container monitoring
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD pgrep sleep || exit 1

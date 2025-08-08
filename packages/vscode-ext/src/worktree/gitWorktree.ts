@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import { Logger } from '../util/logger';
+import { ErrorHandler } from '../util/errorHandler';
+import { RetryHandler } from '../util/retryHandler';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const logger = new Logger('GitWorktree');
 
@@ -11,10 +15,34 @@ export interface GitWorktreeInfo {
 }
 
 export class GitWorktree {
-    private repoPath: string;
+    private _repoPath: string;
 
     constructor(repoPath: string) {
-        this.repoPath = repoPath;
+        // Validate input
+        ErrorHandler.validateRequired(repoPath, 'repoPath', 'GitWorktree.constructor');
+        ErrorHandler.validatePath(repoPath, 'directory', 'GitWorktree.constructor');
+        
+        // Check if it's a git repository
+        const gitDir = path.join(repoPath, '.git');
+        if (!fs.existsSync(gitDir)) {
+            const errorMsg = `Not a git repository: ${repoPath}`;
+            ErrorHandler.handleError(errorMsg, {
+                showUser: false,
+                logLevel: 'error',
+                context: 'GitWorktree.constructor'
+            });
+            throw new Error(errorMsg);
+        }
+        
+        this._repoPath = repoPath;
+    }
+
+    /**
+     * Gets the repository path.
+     * @returns The repository path.
+     */
+    public get repoPath(): string {
+        return this._repoPath;
     }
 
     public async createWorktree(
@@ -22,11 +50,42 @@ export class GitWorktree {
         newWorktreePath?: string
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            const worktreePath = newWorktreePath || `${this.repoPath}-${branchName.replace(/\//g, '-')}-worktree`;
-            const command = `git -C "${this.repoPath}" worktree add -b "${branchName}" "${worktreePath}"`;
+            // Input validation
+            ErrorHandler.validateRequired(branchName, 'branchName', 'GitWorktree.createWorktree');
+
+            const worktreePath = newWorktreePath || `${this._repoPath}-${branchName.replace(/\//g, '-')}-worktree`;
+            
+            // Validate worktree path doesn't already exist
+            if (fs.existsSync(worktreePath)) {
+                const errorMsg = `Worktree path already exists: ${worktreePath}`;
+                logger.error(errorMsg);
+                return reject(new Error(errorMsg));
+            }
+
+            // Ensure parent directory exists
+            const parentDir = path.dirname(worktreePath);
+            if (!fs.existsSync(parentDir)) {
+                try {
+                    fs.mkdirSync(parentDir, { recursive: true });
+                } catch (error: any) {
+                    ErrorHandler.handleError(error, {
+                        showUser: false,
+                        logLevel: 'error',
+                        context: 'GitWorktree.createWorktree.parentDirectory'
+                    });
+                    return reject(new Error(`Failed to create parent directory for worktree: ${error.message}`));
+                }
+            }
+
+            const command = `git -C "${this._repoPath}" worktree add -b "${branchName}" "${worktreePath}"`;
             exec(command, (error, stdout, stderr) => {
                 if (error) {
-                    logger.error(`Error creating worktree: ${stderr}`);
+                    ErrorHandler.handleError(stderr, {
+                        showUser: true,
+                        logLevel: 'error',
+                        userMessage: `Failed to create worktree: ${stderr}`,
+                        context: 'GitWorktree.createWorktree'
+                    });
                     return reject(new Error(`Failed to create worktree: ${stderr}`));
                 }
                 logger.info(`Worktree created: ${stdout}`);
@@ -37,7 +96,7 @@ export class GitWorktree {
 
     public async checkoutWorktree(branchName: string, worktreePath?: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            const targetPath = worktreePath || this.repoPath;
+            const targetPath = worktreePath || this._repoPath;
             const command = `git -C "${targetPath}" checkout "${branchName}"`;
             exec(command, (error, stdout, stderr) => {
                 if (error) {
@@ -52,7 +111,7 @@ export class GitWorktree {
 
     public async mergeBranch(branchToMerge: string, worktreePath?: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            const targetPath = worktreePath || this.repoPath;
+            const targetPath = worktreePath || this._repoPath;
             const command = `git -C "${targetPath}" merge "${branchToMerge}" --no-ff`; // Use --no-ff to always create a merge commit
             exec(command, (error, stdout, stderr) => {
                 if (error) {
@@ -72,7 +131,7 @@ export class GitWorktree {
 
     public async addAndCommitAll(message: string, worktreePath?: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            const targetPath = worktreePath || this.repoPath;
+            const targetPath = worktreePath || this._repoPath;
             const addCommand = `git -C "${targetPath}" add .`;
             exec(addCommand, (error, stdout, stderr) => {
                 if (error) {
@@ -94,7 +153,7 @@ export class GitWorktree {
 
     public async getStatus(worktreePath?: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            const targetPath = worktreePath || this.repoPath;
+            const targetPath = worktreePath || this._repoPath;
             const command = `git -C "${targetPath}" status`;
             exec(command, (error, stdout, stderr) => {
                 if (error) {
@@ -109,7 +168,7 @@ export class GitWorktree {
 
     public async listWorktrees(): Promise<GitWorktreeInfo[]> {
         return new Promise((resolve, reject) => {
-            const command = `git -C "${this.repoPath}" worktree list --porcelain`;
+            const command = `git -C "${this._repoPath}" worktree list --porcelain`;
             exec(command, (error, stdout, stderr) => {
                 if (error) {
                     logger.error(`Error listing worktrees: ${stderr}`);
@@ -142,7 +201,7 @@ export class GitWorktree {
 
     public async removeWorktree(branchName: string, worktreePath?: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            const targetPath = worktreePath || `${this.repoPath}-${branchName.replace(/\//g, '-')}-worktree`;
+            const targetPath = worktreePath || `${this._repoPath}-${branchName.replace(/\//g, '-')}-worktree`;
             const command = `git worktree remove "${targetPath}" --force`; // Use --force to remove even if not clean
             exec(command, (error, stdout, stderr) => {
                 if (error) {

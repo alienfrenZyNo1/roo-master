@@ -43,6 +43,13 @@ export class MergeFlow {
             try {
                 this.trackStatus.updateTrackStatus(track.id, 'in-progress', 'Merging into integration branch');
                 await this.gitWorktree.checkoutWorktree(this.integrationBranch);
+                
+                if (!track.branch) {
+                    vscode.window.showErrorMessage(`Track '${track.name}' has no branch associated with it.`);
+                    this.trackStatus.updateTrackStatus(track.id, 'blocked', 'No branch associated with track.');
+                    continue;
+                }
+                
                 const mergeResult = await this.gitWorktree.mergeBranch(track.branch);
 
                 if (mergeResult.includes('Automatic merge failed')) {
@@ -54,7 +61,7 @@ export class MergeFlow {
                     this.trackStatus.updateTrackStatus(track.id, 'merged', 'Successfully merged into integration branch.');
                 }
             } catch (error: any) {
-                vscode.window.showErrorMessage(`Error merging track '${track.branch}': ${error.message}`);
+                vscode.window.showErrorMessage(`Error merging track '${track.branch || track.name}': ${error.message}`);
                 this.trackStatus.updateTrackStatus(track.id, 'blocked', `Error during merge: ${error.message}`);
                 console.error(error);
             }
@@ -63,6 +70,12 @@ export class MergeFlow {
     }
 
     private async handleMergeConflict(track: Track): Promise<void> {
+        if (!track.branch) {
+            vscode.window.showErrorMessage(`Track '${track.name}' has no branch associated with it.`);
+            this.trackStatus.updateTrackStatus(track.id, 'blocked', 'No branch associated with track.');
+            return;
+        }
+        
         vscode.window.showInformationMessage(`Attempting to resolve conflicts for track '${track.branch}'...`);
         try {
             // Create a temporary worktree for resolution

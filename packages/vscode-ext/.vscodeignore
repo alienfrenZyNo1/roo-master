@@ -1,0 +1,73 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Test files
+test/
+**/test/
+*.test.ts
+*.test.js
+
+# Source maps
+*.map
+
+# Documentation
+docs/
+**/docs/
+*.md
+!README.md
+
+# Configuration files
+.eslintrc*
+.prettierrc*
+.gitignore
+.npmrc
+.pnpmrc
+.yarnrc
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Parent directories
+../
+../../
+../../../
+**/../*
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Build artifacts
+*.vsix
+*.tgz
+*.tar.gz
+
+# Root level files that shouldn't be included
+VERIFICATION_REPORT.md
+.rooignore
+.roo/
+
+# Demo projects
+roo-demo-project/
+**/roo-demo-project/
+
+# E2E test files
+test_*.js
+test_*.ts

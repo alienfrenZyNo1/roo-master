@@ -4,6 +4,8 @@ import { Logger } from '../util/logger';
 
 const logger = new Logger('TrackStatus');
 
+export { Track } from '../orchestrator/workPlanParser';
+
 export class TrackStatus {
     private tracks: Map<string, Track> = new Map();
     private _onDidChangeTreeData: vscode.EventEmitter<Track | undefined | null | void> = new vscode.EventEmitter<Track | undefined | null | void>();
