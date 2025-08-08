@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ${{ matrix.os }}
@@ -118,7 +121,7 @@ jobs:
       - name: Build Docker image
         if: matrix.os == 'ubuntu-latest'
         run: |
-          (cd packages/tool-image && docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" . && docker save -o "../tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}")
+          (cd packages/tool-image && docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" . && docker save -o "tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}")
           
       - name: Debug files at tag
         shell: bash
@@ -150,7 +153,7 @@ jobs:
             *.tar.gz.*
             packages/vscode-ext/*.vsix
             packages/mcp-host/*.tgz
-            packages/tool-image/*.tar
+            packages/tool-image-*.tar
             
   create-release:
     needs: release
@@ -168,7 +171,7 @@ jobs:
           
       - name: Extract version from tag
         id: extract-version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
         
       - name: Create release
         uses: softprops/action-gh-release@v1
@@ -199,12 +202,17 @@ jobs:
             - **Distribution Package**: `.zip` (Windows) or `.tar.gz` (Linux/macOS) file containing all components
             - **Checksums**: SHA256 and MD5 checksums for all packages
           files: |
-            artifacts/distribution-files-*/*.vsix
-            artifacts/distribution-files-*/*.tgz
-            artifacts/distribution-files-*/*.tar
-            artifacts/distribution-files-*/*.zip
-            artifacts/distribution-files-*/*.tar.gz
-            artifacts/distribution-files-*/*.zip.*
-            artifacts/distribution-files-*/*.tar.gz.*
+            artifacts/**/*.vsix
+            artifacts/**/*.tgz
+            artifacts/**/*.tar
+            artifacts/**/*.zip
+            artifacts/**/*.tar.gz
+            artifacts/**/*.sha256
+            artifacts/**/*.md5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List downloaded files
+        run: |
+          echo "Downloaded artifacts under $(pwd)/artifacts:"
+          find artifacts -type f -maxdepth 3 -print
