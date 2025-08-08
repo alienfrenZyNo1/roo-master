@@ -120,6 +120,15 @@ jobs:
         run: |
           (cd packages/tool-image && docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" . && docker save -o "../tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}")
           
+      - name: Debug files at tag
+        shell: bash
+        run: |
+          echo "ref: $GITHUB_REF  ref_name: ${{ github.ref_name }}"
+          git rev-parse HEAD
+          ls -la
+          ls -la docs || true
+          git ls-tree --name-only -r HEAD | egrep '^LICENSE$|^docs/DISTRIBUTION\.md$' || true
+          
       - name: Create distribution package
         shell: bash
         run: |
