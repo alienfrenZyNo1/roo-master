@@ -99,7 +99,7 @@ jobs:
           cd packages/vscode-ext
           npm install
           npm run compile
-          npx vsce package --no-dependencies
+          npx @vscode/vsce package --no-dependencies --no-yarn
           
       - name: Build MCP host server
         run: |
