@@ -66,6 +66,7 @@ jobs:
         shell: bash
           
       - name: Update package.json versions
+        shell: bash
         run: |
           # Update root package.json
           if [ "${{ runner.os }}" = "Windows" ]; then
@@ -83,6 +84,7 @@ jobs:
           fi
           
       - name: Check version consistency
+        shell: bash
         run: |
           ROOT_VERSION=$(jq -r '.version' package.json)
           VSCODE_VERSION=$(jq -r '.version' packages/vscode-ext/package.json)
@@ -127,6 +129,7 @@ jobs:
           docker save -o "../tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}"
           
       - name: Create distribution package
+        shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             powershell -File "scripts/create-distribution.ps1" -Version "${{ steps.extract-version.outputs.VERSION }}" -Force
@@ -136,6 +139,7 @@ jobs:
           fi
           
       - name: Generate checksums
+        shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             powershell -File "scripts/generate-checksums.ps1" -FilePath "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.zip" -Force
