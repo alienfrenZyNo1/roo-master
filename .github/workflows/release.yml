@@ -53,11 +53,10 @@ jobs:
       - name: Validate version
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
-            if (-not ("${{ steps.extract-version.outputs.VERSION }}" -match "^[0-9]+\.[0-9]+\.[0-9]+$")) {
-              echo "Error: Invalid version format. Expected semantic versioning (e.g., 1.0.0)"
-              exit 1
-            }
+            # Use PowerShell for Windows
+            powershell -Command "if (-not ('${{ steps.extract-version.outputs.VERSION }}' -match '^[0-9]+\.[0-9]+\.[0-9]+$')) { Write-Host 'Error: Invalid version format. Expected semantic versioning (e.g., 1.0.0)'; exit 1 }"
           else
+            # Use Bash for Linux and macOS
             if [[ ! "${{ steps.extract-version.outputs.VERSION }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "Error: Invalid version format. Expected semantic versioning (e.g., 1.0.0)"
               exit 1
