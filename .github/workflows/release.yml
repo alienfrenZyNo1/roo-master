@@ -63,6 +63,7 @@ jobs:
             fi
           fi
           echo "Version validated: ${{ steps.extract-version.outputs.VERSION }}"
+        shell: bash
           
       - name: Update package.json versions
         run: |
