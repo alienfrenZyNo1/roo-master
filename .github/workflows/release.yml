@@ -32,7 +32,8 @@ jobs:
       - name: Add pnpm to PATH
         shell: bash
         run: |
-          echo "$(pnpm root --global)/bin" >> $GITHUB_PATH
+          echo "PNPM_HOME=$(pnpm root --global)" >> $GITHUB_ENV
+          echo "$PNPM_HOME" >> $GITHUB_PATH
           
       - name: Get pnpm store directory
         shell: bash
