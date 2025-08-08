@@ -105,17 +105,11 @@ jobs:
           
       - name: Build VS Code extension
         run: |
-          cd packages/vscode-ext
-          npm install
-          npm run compile
-          npx @vscode/vsce package --no-dependencies --no-yarn
+          (cd packages/vscode-ext && npm install && npm run compile && npx @vscode/vsce package --no-dependencies --no-yarn)
           
       - name: Build MCP host server
         run: |
-          cd packages/mcp-host
-          npm install
-          npm run build
-          npm pack
+          (cd packages/mcp-host && npm install && npm run build && npm pack)
           
       - name: Set up Docker
         if: matrix.os == 'ubuntu-latest'
@@ -124,9 +118,7 @@ jobs:
       - name: Build Docker image
         if: matrix.os == 'ubuntu-latest'
         run: |
-          cd packages/tool-image
-          docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" .
-          docker save -o "../tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}"
+          (cd packages/tool-image && docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" . && docker save -o "../tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}")
           
       - name: Create distribution package
         shell: bash
