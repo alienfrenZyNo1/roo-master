@@ -5,8 +5,11 @@
 
 set -e
 
-# Version
-VERSION="1.0.0"
+# Accept version as parameter
+VERSION=${1:-"1.0.0"}
+
+# Check if running in CI environment
+CI=${CI:-false}
 
 # Colors for output
 RED='\033[0;31m'
@@ -54,6 +57,10 @@ build_mcp_host() {
     
     cd packages/mcp-host
     
+    # Update package.json version
+    echo "Updating package.json version to ${VERSION}..."
+    npm version "${VERSION}" --no-git-tag-version
+    
     # Install dependencies
     if [[ -f "package.json" ]]; then
         echo "Installing dependencies..."
@@ -84,16 +91,27 @@ build_docker_image() {
     
     cd packages/tool-image
     
-    # Build the Docker image
+    # Build image for current platform
     echo "Building Docker image..."
-    if docker build -t "roo-master/tool-image:${VERSION}" .; then
-        echo -e "${GREEN}Docker image built successfully: roo-master/tool-image:${VERSION}${NC}"
+    docker build -t "roo-tool-image:${VERSION}" .
+    
+    # Save image with version
+    echo "Saving Docker image..."
+    
+    # Determine platform and save accordingly
+    PLATFORM=$(uname -s)
+    if [[ "$PLATFORM" == "Linux" ]]; then
+        docker save -o "roo-tool-image-${VERSION}-linux-amd64.tar" "roo-tool-image:${VERSION}"
+    elif [[ "$PLATFORM" == "Darwin" ]]; then
+        docker save -o "roo-tool-image-${VERSION}-darwin-amd64.tar" "roo-tool-image:${VERSION}"
     else
-        echo -e "${RED}Error: Docker image build failed${NC}"
-        exit 1
+        echo "Unknown platform: $PLATFORM"
+        docker save -o "roo-tool-image-${VERSION}.tar" "roo-tool-image:${VERSION}"
     fi
     
     cd ../..
+    
+    echo -e "${GREEN}Docker image built successfully.${NC}"
 }
 
 # Function to create distribution package
@@ -102,7 +120,7 @@ create_distribution() {
     
     if [[ -f "scripts/create-distribution.sh" ]]; then
         chmod +x scripts/create-distribution.sh
-        ./scripts/create-distribution.sh
+        ./scripts/create-distribution.sh "${VERSION}"
     else
         echo -e "${YELLOW}Distribution package script not found. Skipping...${NC}"
     fi
@@ -160,11 +178,14 @@ main() {
     echo "4. Distribution Package"
     echo ""
     
-    read -p "Do you want to continue? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Build cancelled."
-        exit 0
+    # Skip interactive prompt in CI environment
+    if [[ "$CI" != "true" ]]; then
+        read -p "Do you want to continue? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Build cancelled."
+            exit 0
+        fi
     fi
     
     # Build components

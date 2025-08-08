@@ -1,0 +1,204 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18.x, 20.x]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+          
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "PNPM_CACHE_DIR=$(pnpm store path)" >> $GITHUB_ENV
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_CACHE_DIR }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Extract version from tag
+        id: extract-version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        
+      - name: Validate version
+        run: |
+          if [[ ! "${{ steps.extract-version.outputs.VERSION }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid version format. Expected semantic versioning (e.g., 1.0.0)"
+            exit 1
+          fi
+          echo "Version validated: ${{ steps.extract-version.outputs.VERSION }}"
+          
+      - name: Update package.json versions
+        run: |
+          # Update root package.json
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            powershell -Command "(Get-Content 'package.json') -replace '\"version\": \"[^\"]+\"', '\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"' | Set-Content 'package.json'"
+            powershell -Command "(Get-Content 'packages/vscode-ext/package.json') -replace '\"version\": \"[^\"]+\"', '\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"' | Set-Content 'packages/vscode-ext/package.json'"
+            powershell -Command "(Get-Content 'packages/mcp-host/package.json') -replace '\"version\": \"[^\"]+\"', '\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"' | Set-Content 'packages/mcp-host/package.json'"
+          else
+            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" package.json
+            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/vscode-ext/package.json
+            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/mcp-host/package.json
+          fi
+          
+      - name: Check version consistency
+        run: |
+          ROOT_VERSION=$(jq -r '.version' package.json)
+          VSCODE_VERSION=$(jq -r '.version' packages/vscode-ext/package.json)
+          MCP_VERSION=$(jq -r '.version' packages/mcp-host/package.json)
+          
+          if [ "$ROOT_VERSION" != "${{ steps.extract-version.outputs.VERSION }}" ] || \
+             [ "$VSCODE_VERSION" != "${{ steps.extract-version.outputs.VERSION }}" ] || \
+             [ "$MCP_VERSION" != "${{ steps.extract-version.outputs.VERSION }}" ]; then
+            echo "Error: Version mismatch detected"
+            echo "Expected: ${{ steps.extract-version.outputs.VERSION }}"
+            echo "Root package.json: $ROOT_VERSION"
+            echo "VS Code package.json: $VSCODE_VERSION"
+            echo "MCP package.json: $MCP_VERSION"
+            exit 1
+          fi
+          
+          echo "All package.json files have consistent version: ${{ steps.extract-version.outputs.VERSION }}"
+          
+      - name: Build VS Code extension
+        run: |
+          cd packages/vscode-ext
+          npm install
+          npm run compile
+          npx vsce package --no-dependencies
+          
+      - name: Build MCP host server
+        run: |
+          cd packages/mcp-host
+          npm install
+          npm run build
+          npm pack
+          
+      - name: Set up Docker
+        if: matrix.os == 'ubuntu-latest'
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Docker image
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd packages/tool-image
+          docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" .
+          docker save -o "../tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}"
+          
+      - name: Create distribution package
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            powershell -File "scripts/create-distribution.ps1" -Version "${{ steps.extract-version.outputs.VERSION }}" -Force
+          else
+            chmod +x scripts/create-distribution.sh
+            ./scripts/create-distribution.sh "${{ steps.extract-version.outputs.VERSION }}"
+          fi
+          
+      - name: Generate checksums
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            powershell -File "scripts/generate-checksums.ps1" -FilePath "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.zip" -Force
+          else
+            sha256sum "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz" > "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz.sha256"
+            md5sum "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz" > "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz.md5"
+          fi
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution-files-${{ matrix.os }}
+          path: |
+            *.zip
+            *.zip.*
+            *.tar.gz
+            *.tar.gz.*
+            packages/vscode-ext/*.vsix
+            packages/mcp-host/*.tgz
+            packages/tool-image/*.tar
+            
+  create-release:
+    needs: release
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          
+      - name: Extract version from tag
+        id: extract-version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release v${{ steps.extract-version.outputs.VERSION }}
+          body: |
+            ## What's Changed
+            
+            ### 🚀 New Features
+            <!-- Add new features here -->
+            
+            ### 🐛 Bug Fixes
+            <!-- Add bug fixes here -->
+            
+            ### 📝 Documentation
+            <!-- Add documentation changes here -->
+            
+            ## Installation
+            
+            See the [Distribution Guide](https://github.com/roo-master/roo-master/blob/main/docs/DISTRIBUTION.md) for installation instructions.
+            
+            ## Assets
+            
+            - **VS Code Extension**: `.vsix` file for manual installation
+            - **MCP Host Server**: `.tgz` file for npm installation
+            - **Docker Tool Image**: `.tar` file for Docker image
+            - **Distribution Package**: `.zip` (Windows) or `.tar.gz` (Linux/macOS) file containing all components
+            - **Checksums**: SHA256 and MD5 checksums for all packages
+          files: |
+            artifacts/distribution-files-*/*.vsix
+            artifacts/distribution-files-*/*.tgz
+            artifacts/distribution-files-*/*.tar
+            artifacts/distribution-files-*/*.zip
+            artifacts/distribution-files-*/*.tar.gz
+            artifacts/distribution-files-*/*.zip.*
+            artifacts/distribution-files-*/*.tar.gz.*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

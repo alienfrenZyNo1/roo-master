@@ -39,31 +39,78 @@ Run the appropriate installation script for your platform:
 .\scripts\install.ps1
 ```
 
-#### Option 2: Install from Distribution Package
+#### Option 2: Install from GitHub Releases
 
-1. Download the latest distribution package from the [Releases](https://github.com/roo-master/roo-master/releases) page
-2. Extract the package:
+1. Find the latest release on our [GitHub Releases page](https://github.com/roo-master/roo-master/releases)
+2. Download the appropriate distribution file for your platform:
+   - `roo-master-[version]-distribution.zip` - General distribution package
+   - `roo-master-[version]-windows.zip` - Windows-specific package
+   - `roo-master-[version]-linux.tar.gz` - Linux-specific package
+   - `roo-master-[version]-macos.tar.gz` - macOS-specific package
+3. Verify the checksums:
    ```bash
-   tar -xzf roo-master-1.0.0-distribution.tar.gz
-   cd roo-master-1.0.0
+   # Linux/macOS
+   sha256sum roo-master-[version]-*.zip roo-master-[version]-*.tar.gz
+   # Compare with the SHA256 checksums provided in the release
+   
+   # Windows (PowerShell)
+   Get-FileHash -Path roo-master-[version]-*.zip -Algorithm SHA256
+   Get-FileHash -Path roo-master-[version]-*.tar.gz -Algorithm SHA256
+   # Compare with the SHA256 checksums provided in the release
    ```
-3. Run the installation script for your platform
+4. Extract the package:
+   ```bash
+   # Linux/macOS (for .tar.gz)
+   tar -xzf roo-master-[version]-linux.tar.gz
+   cd roo-master-[version]
+   
+   # Linux/macOS (for .zip)
+   unzip roo-master-[version]-distribution.zip
+   cd roo-master-[version]
+   
+   # Windows (for .zip)
+   Expand-Archive -Path roo-master-[version]-windows.zip -DestinationPath .
+   cd roo-master-[version]
+   ```
+5. Run the installation script for your platform:
+   ```bash
+   # Linux/macOS
+   ./scripts/install.sh
+   
+   # Windows
+   .\scripts\install.ps1
+   ```
 
 #### Option 3: Manual Installation
 
 1. **Install VS Code Extension**
-   - Download the `.vsix` file from the [Releases](https://github.com/roo-master/roo-master/releases) page
+   - Download the `.vsix` file from the latest [GitHub Release](https://github.com/roo-master/roo-master/releases)
    - In VS Code, go to Extensions → "..." → "Install from VSIX..."
    - Select the downloaded `.vsix` file
 
 2. **Install MCP Host Server**
+   - Download the appropriate package for your platform from the latest [GitHub Release](https://github.com/roo-master/roo-master/releases)
+   - Extract the package and install it globally:
    ```bash
+   # Linux/macOS
+   tar -xzf roo-master-[version]-linux.tar.gz
+   cd roo-master-[version]
+   npm install -g packages/mcp-host
+   
+   # Or from npm registry (if available)
    npm install -g @roo/mcp-host
+   
+   # Windows
+   Expand-Archive -Path roo-master-[version]-windows.zip -DestinationPath .
+   cd roo-master-[version]
+   npm install -g packages/mcp-host
    ```
 
 3. **Setup Docker Image**
    ```bash
-   docker pull roo-master/tool-image:1.0.0
+   docker pull roo-master/tool-image:latest
+   # Or for a specific version:
+   docker pull roo-master/tool-image:[version]
    ```
 
 ## Usage
@@ -94,7 +141,15 @@ Run the Docker container:
 ```bash
 docker run -it --rm \
   -v /path/to/your/workspace:/work \
-  roo-master/tool-image:1.0.0
+  roo-master/tool-image:latest
+```
+
+Or for a specific version:
+
+```bash
+docker run -it --rm \
+  -v /path/to/your/workspace:/work \
+  roo-master/tool-image:[version]
 ```
 
 ## Components
@@ -127,6 +182,49 @@ docker run -it --rm \
 - [Changelog](CHANGELOG.md) - Version history and release notes
 - [LICENSE](LICENSE) - MIT License
 
+## Releases
+
+Roo Master uses automated GitHub Actions workflows to create releases. This ensures consistent and reliable releases across all platforms.
+
+### Automated Release Process
+
+- **Trigger**: Releases are automatically created when a tag is pushed to the repository
+- **Build**: All components are built and tested in a CI environment
+- **Package**: Distribution packages are created for all supported platforms
+- **Upload**: Release artifacts are uploaded to GitHub Releases
+
+### Release Artifacts
+
+Each release includes the following files:
+
+- `roo-master-[version]-distribution.zip` - General distribution package with all components
+- `roo-master-[version]-windows.zip` - Windows-specific package
+- `roo-master-[version]-linux.tar.gz` - Linux-specific package
+- `roo-master-[version]-macos.tar.gz` - macOS-specific package
+- `roo-master-[version].vsix` - VS Code extension package
+- `roo-master-[version]-distribution.zip.sha256` - SHA256 checksums
+- `roo-master-[version]-distribution.zip.md5` - MD5 checksums
+
+### Verifying Release Integrity
+
+To verify the integrity of downloaded files:
+
+1. Download the release artifacts and checksum files
+2. Verify the checksums:
+   ```bash
+   # Linux/macOS
+   sha256sum -c roo-master-[version]-distribution.zip.sha256
+   
+   # Windows (PowerShell)
+   $expectedHash = Get-Content roo-master-[version]-distribution.zip.sha256
+   $actualHash = Get-FileHash -Path roo-master-[version]-distribution.zip -Algorithm SHA256
+   $expectedHash -eq $actualHash.Hash
+   ```
+
+### Finding Releases
+
+You can find all releases on our [GitHub Releases page](https://github.com/roo-master/roo-master/releases). The latest stable release is recommended for most users.
+
 ## Development
 
 ### Building from Source
@@ -157,7 +255,7 @@ docker run -it --rm \
 
 ### Creating Distribution Packages
 
-To create distribution packages:
+Distribution packages are automatically created when a new tag is pushed to the repository. However, if you need to create distribution packages manually for testing purposes:
 
 ```bash
 # Linux/macOS
@@ -167,7 +265,7 @@ To create distribution packages:
 .\scripts\create-distribution.ps1
 ```
 
-This will create a complete distribution archive with all components.
+This will create a complete distribution archive with all components. For official releases, use the automated release process by pushing a version tag to the repository.
 
 ## Contributing
 

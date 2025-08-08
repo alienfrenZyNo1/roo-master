@@ -2,11 +2,15 @@
 # This script builds all components of the Roo Master project
 
 param(
+    [string]$Version = "1.0.0",
     [switch]$Force = $false
 )
 
-# Version
-$VERSION = "1.0.0"
+# Use provided version
+$VERSION = $Version
+
+# Check if running in CI environment
+$CI = if ($env:CI -eq "true") { $true } else { $false }
 
 # Colors for output (Windows 10+ supports ANSI escape codes)
 $GREEN = "`e[0;32m"
@@ -58,6 +62,10 @@ function Build-MCPHost {
     Push-Location "packages\mcp-host"
     
     try {
+        # Update package.json version
+        Write-Host "Updating package.json version to $VERSION..." -ForegroundColor Cyan
+        npm version $VERSION --no-git-tag-version
+        
         # Install dependencies
         if (Test-Path "package.json" -PathType Leaf) {
             Write-Host "Installing dependencies..." -ForegroundColor Cyan
@@ -93,9 +101,12 @@ function Build-DockerImage {
     try {
         # Build the Docker image
         Write-Host "Building Docker image..." -ForegroundColor Cyan
-        $result = docker build -t "roo-master/tool-image:$VERSION" .
+        $result = docker build -t "roo-tool-image:$VERSION" .
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "${GREEN}Docker image built successfully: roo-master/tool-image:$VERSION${NC}" -ForegroundColor Green
+            # Save image with version
+            Write-Host "Saving Docker image..." -ForegroundColor Cyan
+            docker save -o "roo-tool-image-$VERSION-windows-amd64.tar" "roo-tool-image:$VERSION"
+            Write-Host "${GREEN}Docker image built successfully: roo-tool-image:$VERSION${NC}" -ForegroundColor Green
         } else {
             Write-Host "${RED}Error: Docker image build failed${NC}" -ForegroundColor Red
             exit 1
@@ -111,7 +122,7 @@ function Create-Distribution {
     Write-Host "${BLUE}Creating distribution package...${NC}" -ForegroundColor Blue
     
     if (Test-Path "scripts\create-distribution.ps1" -PathType Leaf) {
-        & .\scripts\create-distribution.ps1 -Force:$Force
+        & .\scripts\create-distribution.ps1 -Version $VERSION -Force:$Force
     } else {
         Write-Host "${YELLOW}Distribution package script not found. Skipping...${NC}" -ForegroundColor Yellow
     }
@@ -170,7 +181,9 @@ function Main {
     Write-Host "4. Distribution Package" -ForegroundColor Cyan
     Write-Host ""
     
-    if (-not $Force) {
+    # Skip interactive prompt in CI environment
+    $isCI = [bool]::Parse($env:CI)
+    if (-not $Force -and -not $isCI) {
         $response = Read-Host "Do you want to continue? (y/N)"
         if ($response -ne "y" -and $response -ne "Y") {
             Write-Host "Build cancelled." -ForegroundColor Yellow

@@ -1,14 +1,17 @@
-# Roo Master Distribution Archive Creation Script for Windows
+# Roo Master Distribution Archive Creation Script for Windows CI
 # This script creates a distribution archive containing all components
 
 param(
+    [string]$Version = "1.0.0",
     [switch]$Force = $false
 )
 
-# Version
-$VERSION = "1.0.0"
-$DIST_NAME = "roo-master-$VERSION"
+$VERSION = $Version
+$DIST_NAME = "roo-master-$Version"
 $DIST_FILE = "$DIST_NAME-distribution.zip"
+
+# Check if running in CI environment
+$CI = if ($env:CI -eq "true") { $true } else { $false }
 
 # Colors for output (Windows 10+ supports ANSI escape codes)
 $GREEN = "`e[0;32m"
@@ -26,16 +29,16 @@ function Check-Files {
     $errors = 0
     
     # Check VS Code extension
-    if (-not (Test-Path "packages\vscode-ext\roo-master-$VERSION.vsix" -PathType Leaf)) {
+    if (-not (Test-Path "packages\vscode-ext\roo-master-$Version.vsix" -PathType Leaf)) {
         Write-Host "${RED}Error: VS Code extension package not found.${NC}" -ForegroundColor Red
-        Write-Host "Expected: packages\vscode-ext\roo-master-$VERSION.vsix" -ForegroundColor Cyan
+        Write-Host "Expected: packages\vscode-ext\roo-master-$Version.vsix" -ForegroundColor Cyan
         $errors++
     }
     
     # Check MCP host server
-    if (-not (Test-Path "packages\mcp-host\roo-mcp-host-$VERSION.tgz" -PathType Leaf)) {
+    if (-not (Test-Path "packages\mcp-host\roo-mcp-host-$Version.tgz" -PathType Leaf)) {
         Write-Host "${RED}Error: MCP host server package not found.${NC}" -ForegroundColor Red
-        Write-Host "Expected: packages\mcp-host\roo-mcp-host-$VERSION.tgz" -ForegroundColor Cyan
+        Write-Host "Expected: packages\mcp-host\roo-mcp-host-$Version.tgz" -ForegroundColor Cyan
         $errors++
     }
     
@@ -118,11 +121,17 @@ function Copy-Files {
     New-Item -ItemType Directory -Path $docsDir -Force | Out-Null
     
     # Copy package files
-    Copy-Item "packages\vscode-ext\roo-master-$VERSION.vsix" $vscodeExtDir -Force
-    Copy-Item "packages\mcp-host\roo-mcp-host-$VERSION.tgz" $mcpHostDir -Force
+    Copy-Item "packages\vscode-ext\roo-master-$Version.vsix" $vscodeExtDir -Force
+    Copy-Item "packages\mcp-host\roo-mcp-host-$Version.tgz" $mcpHostDir -Force
     Copy-Item "packages\tool-image\Dockerfile" $toolImageDir -Force
     Copy-Item "packages\tool-image\push-image.sh" $toolImageDir -Force
     Copy-Item "packages\tool-image\push-image.ps1" $toolImageDir -Force
+    
+    # Copy Docker image tarball if it exists
+    if (Test-Path "packages\tool-image\roo-tool-image-$Version-windows-amd64.tar" -PathType Leaf) {
+        Copy-Item "packages\tool-image\roo-tool-image-$Version-windows-amd64.tar" $toolImageDir -Force
+        Write-Host "Docker image tarball copied: packages\tool-image\roo-tool-image-$Version-windows-amd64.tar" -ForegroundColor Cyan
+    }
     
     # Copy scripts
     Copy-Item "scripts\install.sh" $scriptsDir -Force
@@ -271,8 +280,8 @@ function Display-Info {
     Write-Host "Archive size: $([math]::Round($fileInfo.Length / 1MB, 2)) MB" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Contents:" -ForegroundColor Cyan
-    Write-Host "  - VS Code Extension: packages\vscode-ext\roo-master-$VERSION.vsix" -ForegroundColor Cyan
-    Write-Host "  - MCP Host Server: packages\mcp-host\roo-mcp-host-$VERSION.tgz" -ForegroundColor Cyan
+    Write-Host "  - VS Code Extension: packages\vscode-ext\roo-master-$Version.vsix" -ForegroundColor Cyan
+    Write-Host "  - MCP Host Server: packages\mcp-host\roo-mcp-host-$Version.tgz" -ForegroundColor Cyan
     Write-Host "  - Docker Image: packages\tool-image\" -ForegroundColor Cyan
     Write-Host "  - Installation Scripts: scripts\" -ForegroundColor Cyan
     Write-Host "  - Documentation: docs\" -ForegroundColor Cyan
@@ -319,6 +328,11 @@ function Main {
         # Cleanup
         Cleanup -TEMP_DIR $TEMP_DIR
     }
+}
+
+# Check if running in CI environment
+if ($env:CI -eq "true") {
+    $Force = $true
 }
 
 # Run main function

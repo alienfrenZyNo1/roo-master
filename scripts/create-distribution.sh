@@ -6,9 +6,12 @@
 set -e
 
 # Version
-VERSION="1.0.0"
+VERSION=${1:-"1.0.0"}
 DIST_NAME="roo-master-${VERSION}"
 DIST_FILE="${DIST_NAME}-distribution.tar.gz"
+
+# Check if running in CI environment
+CI=${CI:-false}
 
 # Colors for output
 RED='\033[0;31m'
@@ -111,6 +114,22 @@ copy_files() {
     cp "packages/tool-image/Dockerfile" "${DIST_DIR}/packages/tool-image/"
     cp "packages/tool-image/push-image.sh" "${DIST_DIR}/packages/tool-image/"
     cp "packages/tool-image/push-image.ps1" "${DIST_DIR}/packages/tool-image/"
+    
+    # Check if Docker image tarball exists and copy it
+    if [[ -f "packages/tool-image/roo-tool-image-${VERSION}-linux-amd64.tar.gz" ]]; then
+        cp "packages/tool-image/roo-tool-image-${VERSION}-linux-amd64.tar.gz" "${DIST_DIR}/packages/tool-image/"
+        echo "Docker image tarball copied: packages/tool-image/roo-tool-image-${VERSION}-linux-amd64.tar.gz"
+    fi
+    
+    if [[ -f "packages/tool-image/roo-tool-image-${VERSION}-darwin-amd64.tar.gz" ]]; then
+        cp "packages/tool-image/roo-tool-image-${VERSION}-darwin-amd64.tar.gz" "${DIST_DIR}/packages/tool-image/"
+        echo "Docker image tarball copied: packages/tool-image/roo-tool-image-${VERSION}-darwin-amd64.tar.gz"
+    fi
+    
+    if [[ -f "packages/tool-image/roo-tool-image-${VERSION}-windows-amd64.tar.gz" ]]; then
+        cp "packages/tool-image/roo-tool-image-${VERSION}-windows-amd64.tar.gz" "${DIST_DIR}/packages/tool-image/"
+        echo "Docker image tarball copied: packages/tool-image/roo-tool-image-${VERSION}-windows-amd64.tar.gz"
+    fi
     
     # Copy scripts
     cp "scripts/install.sh" "${DIST_DIR}/scripts/"
