@@ -65,6 +65,10 @@ jobs:
             powershell -Command "(Get-Content 'package.json') -replace '\"version\": \"[^\"]+\"', '\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"' | Set-Content 'package.json'"
             powershell -Command "(Get-Content 'packages/vscode-ext/package.json') -replace '\"version\": \"[^\"]+\"', '\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"' | Set-Content 'packages/vscode-ext/package.json'"
             powershell -Command "(Get-Content 'packages/mcp-host/package.json') -replace '\"version\": \"[^\"]+\"', '\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"' | Set-Content 'packages/mcp-host/package.json'"
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" package.json
+            sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/vscode-ext/package.json
+            sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/mcp-host/package.json
           else
             sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" package.json
             sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/vscode-ext/package.json
