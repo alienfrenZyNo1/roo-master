@@ -221,10 +221,18 @@ create_checksums() {
     echo -e "${YELLOW}Creating checksums...${NC}"
     
     # Create SHA256 checksum
-    sha256sum "${DIST_FILE}" > "${DIST_FILE}.sha256"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        shasum -a 256 "${DIST_FILE}" > "${DIST_FILE}.sha256"
+    else
+        sha256sum "${DIST_FILE}" > "${DIST_FILE}.sha256"
+    fi
     
     # Create MD5 checksum
-    md5sum "${DIST_FILE}" > "${DIST_FILE}.md5"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        md5 "${DIST_FILE}" > "${DIST_FILE}.md5"
+    else
+        md5sum "${DIST_FILE}" > "${DIST_FILE}.md5"
+    fi
     
     echo -e "${GREEN}Checksums created:${NC}"
     echo "SHA256: ${DIST_FILE}.sha256"
