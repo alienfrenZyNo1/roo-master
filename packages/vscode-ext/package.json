@@ -1,0 +1,94 @@
+{
+  "name": "roo-master",
+  "displayName": "Roo Master",
+  "description": "VS Code Extension for Roo Master",
+  "version": "0.0.1",
+  "publisher": "RooVeterinaryInc",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "roo-master.createWorktree",
+        "title": "Roo Master: Create Worktree (new branch)"
+      },
+      {
+        "command": "roo-master.openWorktree",
+        "title": "Roo Master: Open Worktree"
+      },
+      {
+        "command": "roo-master.startToolContainers",
+        "title": "Roo Master: Start Tool Container(s)"
+      },
+      {
+        "command": "roo-master.stopToolContainers",
+        "title": "Roo Master: Stop Tool Container(s)"
+      },
+      {
+        "command": "roo-master.registerMcpServer",
+        "title": "Roo Master: Register MCP Server"
+      },
+      {
+        "command": "roo-master.showLogs",
+        "title": "Roo Master: Show Logs"
+      },
+      {
+        "command": "roo-master.createIntegrationBranch",
+        "title": "Roo Master: Create Integration Branch"
+      },
+      {
+        "command": "roo-master.mergeCompletedTracks",
+        "title": "Roo Master: Merge Completed Tracks"
+      },
+      {
+        "command": "roo-master.showTrackStatus",
+        "title": "Roo Master: Show Track Status"
+      },
+      {
+        "command": "roo-master.executeWorkPlan",
+        "title": "Roo Master: Execute Work Plan"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "rooMasterTrackStatusView",
+          "name": "Roo Master Track Status",
+          "when": "workspaceFoldersPresent"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "MOCHA_REPORTER=mocha-junit-reporter MOCHA_FILE=test-results/e2e-test-results.xml vscode-test"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "@vscode/test-electron": "^2.3.4",
+    "eslint": "^8.47.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.1.6",
+    "fs-extra": "^11.2.0"
+  },
+  "dependencies": {
+    "@dagrejs/graphlib": "^2.2.4"
+  }
+}

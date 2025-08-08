@@ -1,0 +1,15 @@
+{
+  "name": "sample-project",
+  "version": "1.0.0",
+  "description": "A sample project for Roo Master E2E testing",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Building project...' && mkdir -p dist && echo 'console.log(\"Build successful!\");' > dist/bundle.js",
+    "test": "echo 'Running tests...' && node test.js",
+    "lint": "echo 'Running lint...' && eslint . --fix",
+    "start": "node index.js"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  }
+}

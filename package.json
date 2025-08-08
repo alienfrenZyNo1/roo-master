@@ -1,0 +1,18 @@
+{
+  "name": "roo-master",
+  "version": "0.0.1",
+  "description": "Roo Master Repository",
+  "private": true,
+  "packageManager": "pnpm@9.6.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test:e2e": "pnpm --filter ./packages/vscode-ext test",
+    "test:setup": "node scripts/e2e-setup.js",
+    "test:teardown": "node scripts/e2e-teardown.js"
+  },
+  "devDependencies": {
+    "mocha-junit-reporter": "^2.2.1"
+  }
+}
