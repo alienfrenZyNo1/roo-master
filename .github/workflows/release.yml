@@ -139,16 +139,6 @@ jobs:
             cd ${{ github.workspace }} && ./scripts/create-distribution.sh "${{ steps.extract-version.outputs.VERSION }}"
           fi
           
-      - name: Generate checksums
-        shell: bash
-        run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            powershell -File "scripts/generate-checksums.ps1" -FilePath "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.zip" -Force
-          else
-            sha256sum "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz" > "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz.sha256"
-            md5sum "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz" > "roo-master-${{ steps.extract-version.outputs.VERSION }}-distribution.tar.gz.md5"
-          fi
-          
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
