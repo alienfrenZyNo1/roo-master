@@ -131,7 +131,7 @@ jobs:
             powershell -File "scripts/create-distribution.ps1" -Version "${{ steps.extract-version.outputs.VERSION }}" -Force
           else
             chmod +x scripts/create-distribution.sh
-            ./scripts/create-distribution.sh "${{ steps.extract-version.outputs.VERSION }}"
+            cd ${{ github.workspace }} && ./scripts/create-distribution.sh "${{ steps.extract-version.outputs.VERSION }}"
           fi
           
       - name: Generate checksums
