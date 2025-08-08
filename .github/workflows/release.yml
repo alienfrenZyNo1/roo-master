@@ -70,9 +70,9 @@ jobs:
             sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/vscode-ext/package.json
             sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/mcp-host/package.json
           else
-            sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" package.json
-            sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/vscode-ext/package.json
-            sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/mcp-host/package.json
+            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" package.json
+            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/vscode-ext/package.json
+            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${{ steps.extract-version.outputs.VERSION }}\"/g" packages/mcp-host/package.json
           fi
           
       - name: Check version consistency
