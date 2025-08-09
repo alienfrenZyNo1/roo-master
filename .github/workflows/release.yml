@@ -10,10 +10,9 @@ permissions:
 
 jobs:
   release:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
         node-version: [20.x]
     
     steps:
@@ -108,18 +107,16 @@ jobs:
           
       - name: Build VS Code extension
         run: |
-          (cd packages/vscode-ext && npm install && npm run compile && npx @vscode/vsce package --no-dependencies --no-yarn --out "roo-master.roo-master-${{ steps.extract-version.outputs.VERSION }}.vsix")
+          (cd packages/vscode-ext && npm install && npm run compile && npx @vscode/vsce package --no-dependencies --no-yarn --out "roo-master-${{ steps.extract-version.outputs.VERSION }}.vsix")
           
       - name: Build MCP host server
         run: |
           (cd packages/mcp-host && npm install && npm run build && npm pack)
           
       - name: Set up Docker
-        if: matrix.os == 'ubuntu-latest'
         uses: docker/setup-buildx-action@v3
         
       - name: Build Docker image
-        if: matrix.os == 'ubuntu-latest'
         run: |
           (cd packages/tool-image && docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" . && docker save -o "tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}")
           
@@ -135,17 +132,13 @@ jobs:
       - name: Create distribution package
         shell: bash
         run: |
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            powershell -File "scripts/create-distribution.ps1" -Version "${{ steps.extract-version.outputs.VERSION }}" -Force
-          else
-            chmod +x scripts/create-distribution.sh
-            cd ${{ github.workspace }} && ./scripts/create-distribution.sh "${{ steps.extract-version.outputs.VERSION }}"
-          fi
+          chmod +x scripts/create-distribution.sh
+          ./scripts/create-distribution.sh "${{ steps.extract-version.outputs.VERSION }}"
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: distribution-files-${{ matrix.os }}
+          name: distribution-files
           path: |
             *.zip
             *.zip.*
@@ -153,7 +146,7 @@ jobs:
             *.tar.gz.*
             packages/vscode-ext/*.vsix
             packages/mcp-host/*.tgz
-            packages/tool-image-*.tar
+            packages/tool-image/tool-image-*.tar
             
   create-release:
     needs: release
@@ -178,29 +171,6 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Release v${{ steps.extract-version.outputs.VERSION }}
-          body: |
-            ## What's Changed
-            
-            ### 🚀 New Features
-            <!-- Add new features here -->
-            
-            ### 🐛 Bug Fixes
-            <!-- Add bug fixes here -->
-            
-            ### 📝 Documentation
-            <!-- Add documentation changes here -->
-            
-            ## Installation
-            
-            See the [Distribution Guide](https://github.com/roo-master/roo-master/blob/main/docs/DISTRIBUTION.md) for installation instructions.
-            
-            ## Assets
-            
-            - **VS Code Extension**: `.vsix` file for manual installation
-            - **MCP Host Server**: `.tgz` file for npm installation
-            - **Docker Tool Image**: `.tar` file for Docker image
-            - **Distribution Package**: `.zip` (Windows) or `.tar.gz` (Linux/macOS) file containing all components
-            - **Checksums**: SHA256 and MD5 checksums for all packages
           files: |
             artifacts/**/*.vsix
             artifacts/**/*.tgz
