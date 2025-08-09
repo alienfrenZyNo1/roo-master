@@ -41,7 +41,7 @@ Run the appropriate installation script for your platform:
 
 #### Option 2: Install from GitHub Releases
 
-1. Find the latest release on our [GitHub Releases page](https://github.com/roo-master/roo-master/releases)
+1. Find the latest release on our [GitHub Releases page](https://github.com/alienfrenZyNo1/roo-master/releases)
 2. Download the appropriate distribution file for your platform:
    - `roo-[version]-dist.tar.gz` - General distribution package
    - `roo-master-[version].vsix` - VS Code extension package
@@ -77,12 +77,12 @@ Run the appropriate installation script for your platform:
 #### Option 3: Manual Installation
 
 1. **Install VS Code Extension**
-   - Download the `.vsix` file from the latest [GitHub Release](https://github.com/roo-master/roo-master/releases)
+   - Download the `.vsix` file from the latest [GitHub Release](https://github.com/alienfrenZyNo1/roo-master/releases)
    - In VS Code, go to Extensions → "..." → "Install from VSIX..."
    - Select the downloaded `.vsix` file
 
 2. **Install MCP Host Server**
-   - Download the appropriate package for your platform from the latest [GitHub Release](https://github.com/roo-master/roo-master/releases)
+   - Download the appropriate package for your platform from the latest [GitHub Release](https://github.com/alienfrenZyNo1/roo-master/releases)
    - Extract the package and install it globally:
    ```bash
    # Linux/macOS
@@ -213,7 +213,7 @@ To verify the integrity of downloaded files:
 
 ### Finding Releases
 
-You can find all releases on our [GitHub Releases page](https://github.com/roo-master/roo-master/releases). The latest stable release is recommended for most users.
+You can find all releases on our [GitHub Releases page](https://github.com/alienfrenZyNo1/roo-master/releases). The latest stable release is recommended for most users.
 
 ## Development
 
@@ -221,7 +221,7 @@ You can find all releases on our [GitHub Releases page](https://github.com/roo-m
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/roo-master/roo-master.git
+   git clone https://github.com/alienfrenZyNo1/roo-master/roo-master.git
    cd roo-master
    ```
 
@@ -269,9 +269,9 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/roo-master/roo-master/issues)
-- **Documentation**: [Project Wiki](https://github.com/roo-master/roo-master/wiki)
-- **Discussions**: [GitHub Discussions](https://github.com/roo-master/roo-master/discussions)
+- **Issues**: [GitHub Issues](https://github.com/alienfrenZyNo1/roo-master/issues)
+- **Documentation**: [Project Wiki](https://github.com/alienfrenZyNo1/roo-master/wiki)
+- **Discussions**: [GitHub Discussions](https://github.com/alienfrenZyNo1/roo-master/discussions)
 
 ## License
 
