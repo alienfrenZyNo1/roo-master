@@ -108,7 +108,7 @@ jobs:
           
       - name: Build VS Code extension
         run: |
-          (cd packages/vscode-ext && npm install && npm run compile && npx @vscode/vsce package --no-dependencies --no-yarn --out "roo-master-${{ steps.extract-version.outputs.VERSION }}.vsix")
+          (cd packages/vscode-ext && npm install && npm run compile && npx @vscode/vsce package --no-dependencies --no-yarn --out "roo-master.roo-master-${{ steps.extract-version.outputs.VERSION }}.vsix")
           
       - name: Build MCP host server
         run: |
