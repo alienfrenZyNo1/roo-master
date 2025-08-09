@@ -101,9 +101,9 @@ Run the appropriate installation script for your platform:
 
 3. **Setup Docker Image**
    ```bash
-   docker pull roo-master/tool-image:latest
+   docker pull adrianmarikar/roo-master:latest
    # Or for a specific version:
-   docker pull roo-master/tool-image:[version]
+   docker pull adrianmarikar/roo-master:[version]
    ```
 
 ## Usage
@@ -134,7 +134,7 @@ Run the Docker container:
 ```bash
 docker run -it --rm \
   -v /path/to/your/workspace:/work \
-  roo-master/tool-image:latest
+  adrianmarikar/roo-master:latest
 ```
 
 Or for a specific version:
@@ -142,7 +142,7 @@ Or for a specific version:
 ```bash
 docker run -it --rm \
   -v /path/to/your/workspace:/work \
-  roo-master/tool-image:[version]
+  adrianmarikar/roo-master:[version]
 ```
 
 ## Components

@@ -116,9 +116,23 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
         
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        
       - name: Build Docker image
         run: |
           (cd packages/tool-image && docker build -t "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" . && docker save -o "tool-image-${{ steps.extract-version.outputs.VERSION }}.tar" "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}")
+          
+          
+      - name: Tag and Push Docker image to Docker Hub
+        run: |
+          docker tag "roo-master/tool-image:${{ steps.extract-version.outputs.VERSION }}" "adrianmarikar/roo-master:${{ steps.extract-version.outputs.VERSION }}"
+          docker push "adrianmarikar/roo-master:${{ steps.extract-version.outputs.VERSION }}"
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
           
       - name: Debug files at tag
         shell: bash
