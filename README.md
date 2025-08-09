@@ -1,6 +1,6 @@
 # Roo Master
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.0.24-blue.svg)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#installation)
 
@@ -43,33 +43,26 @@ Run the appropriate installation script for your platform:
 
 1. Find the latest release on our [GitHub Releases page](https://github.com/roo-master/roo-master/releases)
 2. Download the appropriate distribution file for your platform:
-   - `roo-master-[version]-distribution.zip` - General distribution package
-   - `roo-master-[version]-windows.zip` - Windows-specific package
-   - `roo-master-[version]-linux.tar.gz` - Linux-specific package
-   - `roo-master-[version]-macos.tar.gz` - macOS-specific package
+   - `roo-[version]-dist.tar.gz` - General distribution package
+   - `roo-master-[version].vsix` - VS Code extension package
 3. Verify the checksums:
    ```bash
    # Linux/macOS
-   sha256sum roo-master-[version]-*.zip roo-master-[version]-*.tar.gz
+   sha256sum roo-[version]-dist.tar.gz
    # Compare with the SHA256 checksums provided in the release
    
    # Windows (PowerShell)
-   Get-FileHash -Path roo-master-[version]-*.zip -Algorithm SHA256
-   Get-FileHash -Path roo-master-[version]-*.tar.gz -Algorithm SHA256
+   Get-FileHash -Path roo-[version]-dist.tar.gz -Algorithm SHA256
    # Compare with the SHA256 checksums provided in the release
    ```
 4. Extract the package:
    ```bash
-   # Linux/macOS (for .tar.gz)
-   tar -xzf roo-master-[version]-linux.tar.gz
+   # Linux/macOS
+   tar -xzf roo-[version]-dist.tar.gz
    cd roo-master-[version]
    
-   # Linux/macOS (for .zip)
-   unzip roo-master-[version]-distribution.zip
-   cd roo-master-[version]
-   
-   # Windows (for .zip)
-   Expand-Archive -Path roo-master-[version]-windows.zip -DestinationPath .
+   # Windows
+   tar -xzf roo-[version]-dist.tar.gz
    cd roo-master-[version]
    ```
 5. Run the installation script for your platform:
@@ -197,13 +190,10 @@ Roo Master uses automated GitHub Actions workflows to create releases. This ensu
 
 Each release includes the following files:
 
-- `roo-master-[version]-distribution.zip` - General distribution package with all components
-- `roo-master-[version]-windows.zip` - Windows-specific package
-- `roo-master-[version]-linux.tar.gz` - Linux-specific package
-- `roo-master-[version]-macos.tar.gz` - macOS-specific package
+- `roo-[version]-dist.tar.gz` - General distribution package with all components
 - `roo-master-[version].vsix` - VS Code extension package
-- `roo-master-[version]-distribution.zip.sha256` - SHA256 checksums
-- `roo-master-[version]-distribution.zip.md5` - MD5 checksums
+- `roo-[version]-dist.tar.gz.sha256` - SHA256 checksum for distribution package
+- `roo-[version]-dist.tar.gz.md5` - MD5 checksum for distribution package
 
 ### Verifying Release Integrity
 
@@ -213,11 +203,11 @@ To verify the integrity of downloaded files:
 2. Verify the checksums:
    ```bash
    # Linux/macOS
-   sha256sum -c roo-master-[version]-distribution.zip.sha256
+   sha256sum -c roo-[version]-dist.tar.gz.sha256
    
    # Windows (PowerShell)
-   $expectedHash = Get-Content roo-master-[version]-distribution.zip.sha256
-   $actualHash = Get-FileHash -Path roo-master-[version]-distribution.zip -Algorithm SHA256
+   $expectedHash = Get-Content roo-[version]-dist.tar.gz.sha256
+   $actualHash = Get-FileHash -Path roo-[version]-dist.tar.gz -Algorithm SHA256
    $expectedHash -eq $actualHash.Hash
    ```
 
